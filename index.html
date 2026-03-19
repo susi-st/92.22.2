@@ -30,11 +30,23 @@
         #feedback-progress {
             transition: width 0.1s linear;
         }
+
+        /* 折疊內容動畫 */
+        #explanation-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+            opacity: 0;
+        }
+        #explanation-content.open {
+            max-height: 500px;
+            opacity: 1;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col p-4 md:p-8">
 
-    <!-- Auth Modal -->
+    <!-- Auth Modal (登入視窗) -->
     <div id="auth-modal" class="fixed inset-0 bg-pink-50/90 z-[100] flex items-center justify-center p-4">
         <div class="bg-white rounded-[2.5rem] shadow-xl max-w-sm w-full p-8 text-center border border-pink-100">
             <div class="w-20 h-20 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -114,7 +126,7 @@
         </section>
     </div>
 
-    <!-- Learning Feedback Modal (For wrong answers) -->
+    <!-- Learning Feedback Modal (答錯時的學習充電站) -->
     <div id="feedback-overlay" class="fixed inset-0 bg-black/60 hidden z-[200] flex items-center justify-center p-4">
         <div class="bg-white rounded-[2.5rem] max-w-lg w-full p-8 shadow-2xl animate-in zoom-in duration-300">
             <div class="text-center mb-6">
@@ -123,26 +135,35 @@
                 <p class="text-gray-400 text-sm">先讀讀看課文，再試一次吧！</p>
             </div>
             
-            <div class="space-y-6 mb-4">
+            <div class="space-y-4 mb-6">
+                <!-- 課文內容 -->
                 <div class="bg-blue-50 p-5 rounded-3xl border border-blue-100">
-                    <h4 class="text-blue-600 font-bold text-sm mb-2">【課文擷取】</h4>
+                    <h4 class="text-blue-600 font-bold text-sm mb-2 uppercase tracking-wide">課文內容</h4>
                     <p id="feedback-textbook" class="text-gray-700 leading-relaxed"></p>
                 </div>
-                <div class="bg-green-50 p-5 rounded-3xl border border-green-100">
-                    <h4 class="text-green-600 font-bold text-sm mb-2">【小撇步】</h4>
-                    <p id="feedback-explanation" class="text-gray-700 leading-relaxed"></p>
+
+                <!-- 也就是說... (預設收起) -->
+                <div class="border border-green-100 rounded-3xl overflow-hidden">
+                    <button id="toggle-explanation-btn" class="w-full bg-green-50 px-5 py-3 flex justify-between items-center text-green-700 font-bold text-sm hover:bg-green-100 transition-colors">
+                        <span>也就是說...</span>
+                        <svg id="explanation-arrow" class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div id="explanation-content" class="bg-green-50/30 px-5 overflow-hidden">
+                        <div class="py-4 text-gray-600 text-sm leading-relaxed border-t border-green-50" id="feedback-explanation"></div>
+                    </div>
                 </div>
             </div>
 
-            <!-- 類比式進度條容器 -->
-            <div class="w-full bg-gray-100 h-2 rounded-full mb-6 overflow-hidden">
-                <div id="feedback-progress" class="bg-pink-400 h-full w-full"></div>
-            </div>
-
+            <!-- 主按鈕 -->
             <button id="feedback-close-btn" disabled 
                 class="w-full py-4 rounded-2xl bg-gray-200 text-gray-500 font-bold text-lg cursor-not-allowed transition-all">
-                請認真閱讀內容 (10s)
+                請認真閱讀內容
             </button>
+
+            <!-- 類比式進度條 (白底灰條，置於按鈕下方) -->
+            <div class="w-full bg-white h-1 rounded-full mt-3 overflow-hidden border border-gray-100">
+                <div id="feedback-progress" class="bg-gray-300 h-full w-full"></div>
+            </div>
         </div>
     </div>
 
@@ -167,15 +188,15 @@
             { id: 1, question: "無線網路主要是利用何者作為網路訊號的傳輸媒介？", options: ["電磁波", "紅外線", "聲波", "電流"], answer: ["電磁波"], type: "single", shuffleOnWrong: true, randomOrder: true, textbook: "逐漸發展出「無線網路」，改以電磁波作為網路訊號的傳輸媒介。", explanation: "同學請記住，無線網路不需要實體線路，它是靠著在空間中傳遞的「電磁波」來傳送資料的喔！" },
             { id: 2, question: "關於無線網路電磁波的「頻率」、「傳輸速度」、「受障礙物影響」與「傳輸距離」之間的關係，下列敘述何者正確？", options: ["頻率越高，傳輸速度越快、越易受障礙物影響、傳輸距離越短", "頻率越高，傳輸速度越慢、越容易穿透障礙物、傳輸距離越長", "頻率越低，傳輸速度越快、越容易穿透障礙物、傳輸距離越短", "頻率越低，傳輸速度越慢、越易受障礙物影響、傳輸距離越長"], answer: ["頻率越高，傳輸速度越快、越易受障礙物影響、傳輸距離越短"], type: "single", shuffleOnWrong: true, randomOrder: true, textbook: "電磁波頻率越高，傳輸速度也越快；但訊號易受到障礙物的影響而衰減，因此能傳輸的距離比較短。", explanation: "頻率就像是車速，速度越快（高頻）雖然傳得資料多，但遇到障礙物就很難繞過去，所以跑不遠；頻率低則像慢車，雖然慢但繞射能力強，能傳得比較遠！" },
             { id: 3, question: "(複選題) 下列哪些技術屬於「無線網路」傳輸方式？", options: ["Bluetooth", "Wi-Fi", "行動網路", "光纖", "乙太網路", "ADSL", "藍芽"], answer: ["Bluetooth", "Wi-Fi", "行動網路"], type: "multiple", shuffleOnWrong: true, randomOrder: true, textbook: "常見的無線網路有藍牙、Wi-Fi、行動網路等。", explanation: "這題要選出「不用線」的技術。藍牙、Wi-Fi 跟手機用的行動網路都是透過電磁波傳輸；而光纖和乙太網路則需要實體的線材。" },
-            { id: 4, question: "關於常見無線網路技術的「傳輸距離」，由大到小排序何者正確？", options: ["行動網路 > Wi-Fi > 藍牙", "行動網路 > 藍牙 > Wi-Fi", "Wi-Fi > 行動網路 > 藍牙", "藍牙 > Wi-Fi > 行動網路"], answer: ["行動網路 > Wi-Fi > 藍牙"], type: "single", shuffleOnWrong: true, randomOrder: true, textbook: "行動網路：訊號涵蓋範圍很廣。Wi-Fi：開放空間約 300 公尺、室內約 50~100 公尺。藍牙：傳輸距離約 10~300 公尺。", explanation: "比比看誰傳得遠！行動網路靠基地台可以跨城市通訊，範圍最大；Wi-Fi 涵蓋一棟建築物；藍牙通常只在幾公尺內的個人裝置間傳輸。" },
+            { id: 4, question: "關於常見無線網路技術的「傳輸距離」，由大到小排序何者正確？", options: ["行動網路 > Wi-Fi > 藍牙", "行動網路 > 藍牙 > Wi-Fi", "Wi-Fi > 行動網路 > 藍牙", "藍牙 > Wi-Fi > 行動網路"], answer: ["行動網路 > Wi-Fi > 藍牙"], type: "single", shuffleOnWrong: true, randomOrder: true, textbook: "行動網路：訊號涵蓋範圍很廣（無線廣域網路）。Wi-Fi：傳輸距離在開放空間約為 300 公尺、室內約 50~100 公尺。藍牙：傳輸距離約 10~300 公尺。", explanation: "比比看誰傳得遠！行動網路靠基地台可以跨城市通訊，範圍最大；Wi-Fi 涵蓋一棟建築物；藍牙通常只在幾公尺內的個人裝置間傳輸。" },
             { id: 5, question: "下列哪一種無線網路技術，因為其傳輸距離短且主要用於個人裝置間的連接，又被稱為「無線個人網路」（WPAN）？", options: ["藍牙", "Wi-Fi", "行動網路", "衛星網路"], answer: ["藍牙"], type: "single", shuffleOnWrong: true, randomOrder: true, textbook: "藍牙主要應用於個人行動載具與周邊設備的連接和控制，因此被稱為「無線個人網路」。", explanation: "藍牙（Bluetooth）設計初衷是為了讓你的耳機、滑鼠擺脫線路束縛，連結你的「個人」裝置，所以叫 WPAN！" },
             { id: 6, question: "下列哪一種無線網路技術，其傳輸範圍通常涵蓋一棟建築物或校園內，因此又被稱為「無線區域網路」（WLAN）？", options: ["Wi-Fi", "藍牙", "行動網路", "近場通訊 (NFC)"], answer: ["Wi-Fi"], type: "single", shuffleOnWrong: true, randomOrder: true, textbook: "Wi-Fi 可以讓同個區域中的電腦（如同一間教室或住家）一起上網，所以又稱為「無線區域網路」。", explanation: "在學校教室或家裡最常用到的無線訊號就是 Wi-Fi，它的範圍剛好覆蓋一個特定的「區域」。" },
             { id: 7, question: "下列哪一種無線網路技術，其訊號涵蓋範圍最廣（如城市或國家），因此又被稱為「無線廣域網路」（WWAN）？", options: ["行動網路", "Wi-Fi", "藍牙", "紅外線"], answer: ["行動網路"], type: "single", shuffleOnWrong: true, randomOrder: true, textbook: "行動網路基地臺所提供的無線訊號涵蓋範圍很廣，可以讓更大範圍的行動裝置同時上網，又稱「無線廣域網路」。", explanation: "手機門號能讓你跑遍全台灣都能上網，這種跨城市、跨國家的超大覆蓋範圍就屬於「廣域」網路。" },
-            { id: 8, question: "下列哪一種無線網路技術在第一次使用時，通常必須先經過「配對」程序，兩台裝置才能建立連線並傳輸資料？", options: ["Bluetooth", "Wi-Fi", "行動網路", "ADSL"], answer: ["Bluetooth"], type: "single", shuffleOnWrong: true, randomOrder: true, textbook: "第一次使用藍牙裝置時，須先與行動載具或電腦進行配對，只要配對成功後……就能直接使用。", explanation: "買了新的藍牙耳機要先跟手機「配對（Pairing）」，這是藍牙連線的標準動作，就像是互相交換名片認識一下！" },
-            { id: 9, question: "關於無線網路設備新、舊版本（例如 Wi-Fi 6 與 Wi-Fi 4）混合搭配使用時，其「相容性」與「傳輸速度」的敘述何者正確？", options: ["新版本可支援舊版本（向下相容），但傳輸速度會受限於舊版本的上限", "新版本可支援舊版本（向下相容），且傳輸速度會自動提升至新版本的規格", "舊版本可以支援新版本(向上相容)，且傳輸速度會自動提升至新版本的規格", "舊版本可以支援新版本(向上相容)，但傳輸速度會受限於舊版本的上限"], answer: ["新版本可支援舊版本（向下相容），但傳輸速度會受限於舊版本的上限"], type: "single", shuffleOnWrong: true, randomOrder: true, textbook: "藍牙的版本都能向下相容……但傳輸速度會以較低版本的裝置為主。", explanation: "新版設備通常很體貼，可以連舊設備（向下相容）；但就像強壯的人配上瘦弱的人跑步，整體速度還是會被慢的那一方（舊版本）拖累喔！" },
-            { id: 10, question: "關於無線基地臺（無線分享器）上的「天線」，下列哪一項描述是正確的觀念？", options: ["不能單純從天線數量多寡，來判斷傳輸範圍或速度", "天線數量愈多，代表網路下載速度一定越快", "天線長度愈長，代表無線訊號的穿透力愈強", "為了讓訊號最強，所有天線都應該指向同一個方向"], answer: ["不能單純從天線數量多寡，來判斷傳輸範圍或速度"], type: "single", shuffleOnWrong: true, randomOrder: true, textbook: "並非「外觀的天線越多就越快」……無法由外觀準確判斷基地臺效能。", explanation: "別被外表騙了！有的天線藏在機身裡，有的是分工不同，要準確判斷效能，還是要看產品規格表上的數據才準！" },
-            { id: 11, question: "生活中常聽到的「5G 行動網路」或「4G 吃到飽」，其中的「G」代表的是什麼意思？", options: ["世代 (Generation)", "傳輸速度單位 (Gbps)", "記憶體容量 (GB)", "頻率單位 (GHz)"], answer: ["世代 (Generation)"], type: "single", shuffleOnWrong: true, randomOrder: true, textbook: "G 是第幾代 (generation) 的簡稱。", explanation: "這個 G 不是速度也不是容量，而是「Generation（世代）」。所以 5G 指的就是第五代行動通訊技術！" },
-            { id: 12, question: "5G 行動網路具有「高速度、低延遲、多連結」等特性. 請問在跨年晚會或大型演唱會現場，因為同時有大量使用者上網導致網路難以連上的問題，主要是靠 5G 的哪一項特性來有效解決？", options: ["多連結", "高速度", "低延遲", "高穿透"], answer: ["多連結"], type: "single", shuffleOnWrong: true, randomOrder: true, textbook: "5G 基地臺能容納上萬臺設備同時連接。多連結特性……能容納更多臺設備同時連接。", explanation: "跨年連不上網路是因為人太多「塞車」了。5G 的「多連結」特性就像增加了超多車道，讓上萬台手機可以同時擠進同一個基地台！" }
+            { id: 8, question: "哪一種無線網路在第一次使用時，必須先經過「配對」程序，完成後才能使用？", options: ["藍牙", "Wi-Fi", "行動網路", "紅外線"], answer: ["藍牙"], type: "single", shuffleOnWrong: true, randomOrder: true, textbook: "第一次使用藍牙裝置時，須先與行動載具或電腦進行配對，只要配對成功後……就能直接使用。", explanation: "買了新的藍牙耳機要先跟手機「配對（Pairing）」，這是藍牙連線的標準動作，就像是互相交換名片認識一下！" },
+            { id: 9, question: "關於無線網路設備新、舊版本之間在搭配時的「相容性」和「傳輸速度」哪個描述正確？", options: ["新版會支援舊版(向下相容)，速度以舊版為主", "新版本無法連接舊版本設備", "傳輸速度會自動提升至新版本規格", "舊版本完全無法偵測到新版本訊號"], answer: ["新版會支援舊版(向下相容)，速度以舊版為主"], type: "single", shuffleOnWrong: true, randomOrder: true, textbook: "藍牙的版本都能向下相容……但傳輸速度會以較低版本的裝置為主。", explanation: "新版設備通常很體貼，可以連舊設備（向下相容）；但就像強壯的人配上瘦弱的人跑步，整體速度還是會被慢的那一方（舊版本）拖累喔！" },
+            { id: 10, question: "關於無線基地臺的天線描述，何者正確？", options: ["無法由天線的數量來準確判斷", "天線越多速度一定越快", "天線越長穿透力越強", "天線必須指向同個方向才強"], answer: ["無法由天線的數量來準確判斷"], type: "single", shuffleOnWrong: true, randomOrder: true, textbook: "並非「外觀的天線越多就越快」……無法由外觀準確判斷基地臺效能。", explanation: "別被外表騙了！有的天線藏在機身裡，有的是分工不同，要準確判斷效能，還是要看產品規格表上的數據才準！" },
+            { id: 11, question: "生活中聽到的：「5G行動網路...」中的G代表的是什麼意思？", options: ["世代 (Generation)", "速度單位 (Gbps)", "容量 (GB)", "頻率 (GHz)"], answer: ["世代 (Generation)"], type: "single", shuffleOnWrong: true, randomOrder: true, textbook: "G 是第幾代 (generation) 的簡稱。", explanation: "這個 G 不是速度也不是容量，而是「Generation（世代）」。所以 5G 指的就是第五代行動通訊技術！" },
+            { id: 12, question: "跨年晚會時，因為同時太多人上網導致連結不上網路的問題，5G 的哪種特性可以解決？", options: ["多連結", "高速度", "低延遲", "高穿透"], answer: ["多連結"], type: "single", shuffleOnWrong: true, randomOrder: true, textbook: "5G 基地臺能容納上萬臺設備同時連接。多連結特性……能容納更多臺設備同時連接。", explanation: "跨年連不上網路是因為人太多「塞車」了。5G 的「多連結」特性就像增加了超多車道，讓上萬台手機可以同時擠進同一個基地台！" }
         ];
 
         const quotes = ["無線網路縮短了空間的距離，讓資訊無所不在。", "掌握頻率的特性，就能掌握訊號傳輸的奧秘。", "Bluetooth 是個人裝置間的隱形橋樑。", "Wi-Fi 讓建築物內的每個角落都充滿可能性。", "5G 不斷進化，開啟萬物聯網的新時代。", "向下相容確保了技術交替時的平穩過度。"];
@@ -303,25 +324,30 @@
             const explanation = document.getElementById('feedback-explanation');
             const closeBtn = document.getElementById('feedback-close-btn');
             const progressBar = document.getElementById('feedback-progress');
+            const explanationContent = document.getElementById('explanation-content');
+            const arrow = document.getElementById('explanation-arrow');
+            const toggleBtn = document.getElementById('toggle-explanation-btn');
             
+            // 初始重置折疊狀態
+            explanationContent.classList.remove('open');
+            arrow.style.transform = 'rotate(0deg)';
+
             textbook.innerText = question.textbook;
             explanation.innerText = question.explanation;
             overlay.classList.remove('hidden');
             
-            let timeLeft = 10; // 設為 10 秒
+            let timeLeft = 10; 
             const totalTime = 10;
             
-            // 重置狀態
             closeBtn.disabled = true;
             closeBtn.classList.replace('bg-pink-400', 'bg-gray-200');
             closeBtn.classList.replace('text-white', 'text-gray-500');
             closeBtn.classList.remove('btn-hover', 'cursor-pointer');
             closeBtn.classList.add('cursor-not-allowed');
-            closeBtn.innerText = `請認真閱讀內容 (${Math.ceil(timeLeft)}s)`;
+            closeBtn.innerText = `請認真閱讀內容`;
             progressBar.style.width = '100%';
             
-            // 平滑倒數計時器
-            const intervalTime = 100; // 每 0.1 秒更新一次
+            const intervalTime = 100; 
             const timer = setInterval(() => {
                 timeLeft -= (intervalTime / 1000);
                 const percent = (timeLeft / totalTime) * 100;
@@ -336,10 +362,14 @@
                     closeBtn.classList.replace('text-gray-500', 'text-white');
                     closeBtn.classList.replace('cursor-not-allowed', 'cursor-pointer');
                     closeBtn.classList.add('btn-hover');
-                } else {
-                    closeBtn.innerText = `請認真閱讀內容 (${Math.ceil(timeLeft)}s)`;
                 }
             }, intervalTime);
+
+            // 折疊內容按鈕事件
+            toggleBtn.onclick = () => {
+                const isOpen = explanationContent.classList.toggle('open');
+                arrow.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+            };
 
             closeBtn.onclick = () => {
                 overlay.classList.add('hidden');
