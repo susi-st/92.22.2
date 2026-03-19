@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2-2 無線網路技術 - 互動測驗</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #fff5f7; /* 極淺粉紅 */
+        }
+        .macaron-pink { background-color: #ffdae9; }
+        .macaron-blue { background-color: #d1eeff; }
+        .macaron-green { background-color: #e2fcd4; }
+        .macaron-yellow { background-color: #fff9c4; }
+        .macaron-purple { background-color: #f1e4ff; }
+        
+        .progress-dot.active { background-color: #ff85a1; border-color: #ff85a1; color: white; }
+        .progress-dot.passed { background-color: #ffdae9; border-color: #ff85a1; color: #ff4d6d; pointer-events: none; }
+        
+        .btn-hover { transition: all 0.2s ease-in-out; }
+        .btn-hover:hover { transform: translateY(-2px); filter: brightness(0.95); }
+        .btn-hover:active { transform: translateY(0); }
+
+        .no-select { user-select: none; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col p-4 md:p-8">
+
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="fixed inset-0 bg-pink-50/90 z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2.5rem] shadow-xl max-w-sm w-full p-8 text-center border border-pink-100">
+            <div class="w-20 h-20 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg class="w-10 h-10 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">準備開始測驗</h2>
+            <p class="text-gray-500 mb-8">請輸入您的班級與座號</p>
+            
+            <div class="space-y-4 mb-8">
+                <div>
+                    <label class="block text-left text-sm font-medium text-gray-400 ml-2 mb-1">班級 (901-910)</label>
+                    <input type="number" id="input-class" placeholder="例如：901" min="901" max="910" 
+                        class="w-full px-5 py-3 rounded-2xl border-2 border-gray-100 focus:border-pink-300 focus:outline-none transition-colors text-lg font-bold text-gray-700">
+                </div>
+                <div>
+                    <label class="block text-left text-sm font-medium text-gray-400 ml-2 mb-1">座號 (1-38)</label>
+                    <input type="number" id="input-seat" placeholder="例如：12" min="1" max="38"
+                        class="w-full px-5 py-3 rounded-2xl border-2 border-gray-100 focus:border-pink-300 focus:outline-none transition-colors text-lg font-bold text-gray-700">
+                </div>
+                <p id="auth-error" class="text-red-400 text-sm hidden">請輸入正確的範圍內數值</p>
+            </div>
+
+            <button id="start-quiz-btn" class="w-full py-4 rounded-2xl bg-pink-400 text-white font-bold text-lg shadow-lg btn-hover">開始挑戰</button>
+        </div>
+    </div>
+
+    <!-- App Container -->
+    <div id="app" class="max-w-4xl mx-auto w-full flex-grow flex flex-col opacity-20 pointer-events-none transition-opacity duration-500">
+        <header class="bg-white rounded-3xl shadow-sm p-6 mb-6">
+            <h1 id="main-title" class="text-2xl md:text-3xl font-bold text-pink-500 mb-6 text-center leading-tight">
+                2-2 無線網路技術
+            </h1>
+            <div id="progress-container" class="flex justify-center items-center gap-3 overflow-x-auto py-2"></div>
+        </header>
+
+        <main id="quiz-content" class="bg-white rounded-[2.5rem] shadow-md p-8 flex-grow flex flex-col relative overflow-hidden">
+            <div id="question-area" class="flex-grow">
+                <div id="question-text" class="text-xl font-medium text-gray-700 mb-2 leading-relaxed"></div>
+                <div id="question-hint" class="text-sm text-pink-400 mb-8 font-medium h-6"></div>
+                <div id="options-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </div>
+
+            <div class="mt-8 flex justify-between items-center border-t border-gray-100 pt-6">
+                <div class="text-gray-400 text-sm">
+                    試題編號：<span id="question-index-display">1</span> / <span id="total-questions-display">12</span>
+                </div>
+                <div class="flex gap-4">
+                    <button id="check-btn" class="px-8 py-2 rounded-2xl bg-pink-400 text-white font-bold shadow-sm btn-hover">檢查答案</button>
+                </div>
+            </div>
+        </main>
+
+        <section id="result-page" class="hidden bg-white rounded-[2.5rem] shadow-md p-8 flex-grow flex flex-col items-center text-center">
+            <div class="w-24 h-24 bg-pink-100 rounded-full flex items-center justify-center mb-6">
+                <svg class="w-12 h-12 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">挑戰完成！</h2>
+            <p id="student-id-display" class="text-pink-500 font-mono text-2xl font-bold mb-6"></p>
+            
+            <div class="grid grid-cols-2 gap-6 mb-8 w-full max-w-md">
+                <div class="bg-pink-50 p-4 rounded-3xl">
+                    <p class="text-xs text-gray-500 mb-1">總花費時間</p>
+                    <p id="total-time" class="text-2xl font-bold text-gray-700">00:00</p>
+                </div>
+                <div class="bg-blue-50 p-4 rounded-3xl">
+                    <p class="text-xs text-gray-500 mb-1">累積完成挑戰</p>
+                    <p id="total-challenges-display" class="text-2xl font-bold text-gray-700">1</p>
+                </div>
+            </div>
+
+            <div id="quote-area" class="bg-gray-50 p-6 rounded-3xl italic text-gray-600 mb-8 max-w-xl"></div>
+
+            <div class="flex flex-col gap-3 w-full max-w-xs">
+                <button onclick="location.reload()" class="w-full py-3 rounded-2xl bg-pink-400 text-white font-bold btn-hover">重新挑戰</button>
+                <p id="sync-status" class="text-xs text-gray-400 mt-2">數據同步中...</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- Learning Feedback Modal (For wrong answers) -->
+    <div id="feedback-overlay" class="fixed inset-0 bg-black/60 hidden z-[200] flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2.5rem] max-w-lg w-full p-8 shadow-2xl animate-in zoom-in duration-300">
+            <div class="text-center mb-6">
+                <div class="text-4xl mb-2">💡</div>
+                <h3 class="text-2xl font-bold text-pink-500">學習充電站</h3>
+                <p class="text-gray-400 text-sm">先讀讀看課文，再試一次吧！</p>
+            </div>
+            
+            <div class="space-y-6 mb-8">
+                <div class="bg-blue-50 p-5 rounded-3xl border border-blue-100">
+                    <h4 class="text-blue-600 font-bold text-sm mb-2">【課文擷取】</h4>
+                    <p id="feedback-textbook" class="text-gray-700 leading-relaxed"></p>
+                </div>
+                <div class="bg-green-50 p-5 rounded-3xl border border-green-100">
+                    <h4 class="text-green-600 font-bold text-sm mb-2">【小撇步】</h4>
+                    <p id="feedback-explanation" class="text-gray-700 leading-relaxed"></p>
+                </div>
+            </div>
+
+            <button id="feedback-close-btn" disabled 
+                class="w-full py-4 rounded-2xl bg-gray-200 text-gray-500 font-bold text-lg cursor-not-allowed transition-all">
+                請閱讀內容...5
+            </button>
+        </div>
+    </div>
+
+    <!-- Success Feedback Overlay -->
+    <div id="success-overlay" class="fixed inset-0 pointer-events-none flex items-center justify-center z-40 opacity-0 transition-opacity duration-300">
+        <div class="bg-green-400 text-white px-8 py-4 rounded-full shadow-lg font-bold text-2xl">正確！ 🎉</div>
+    </div>
+
+    <!-- Warning Modal -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black/40 hidden z-[200] flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-xs w-full p-8 text-center border border-gray-100 shadow-xl">
+            <div id="modal-icon" class="mb-4 text-4xl">⚠️</div>
+            <p id="modal-message" class="text-gray-700 font-medium mb-6"></p>
+            <button id="modal-close" class="px-8 py-2 rounded-2xl bg-pink-400 text-white font-bold btn-hover">我知道了</button>
+        </div>
+    </div>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbx0RO7ZnVfRQBiGkeY6ii7f8Yh7mI8A099m-XNTSffC-t4v8LEsOu2jBe0QCdopCdkpFw/exec";
+        
+        const quizData = [
+            { 
+                id: 1, 
+                question: "無線網路主要是利用何者作為網路訊號的傳輸媒介？", 
+                options: ["電磁波", "紅外線", "聲波", "電流"], 
+                answer: ["電磁波"], 
+                type: "single", 
+                shuffleOnWrong: true, 
+                randomOrder: true,
+                textbook: "逐漸發展出「無線網路」，改以電磁波作為網路訊號的傳輸媒介。",
+                explanation: "同學請記住，無線網路不需要實體線路，它是靠著在空間中傳遞的「電磁波」來傳送資料的喔！"
+            },
+            { 
+                id: 2, 
+                question: "關於無線網路電磁波的「頻率」、「傳輸速度」、「受障礙物影響」與「傳輸距離」之間的關係，下列敘述何者正確？", 
+                options: ["頻率越高，傳輸速度越快、越易受障礙物影響、傳輸距離越短", "頻率越高，傳輸速度越慢、越容易穿透障礙物、傳輸距離越長", "頻率越低，傳輸速度越快、越容易穿透障礙物、傳輸距離越短", "頻率越低，傳輸速度越慢、越易受障礙物影響、傳輸距離越長"], 
+                answer: ["頻率越高，傳輸速度越快、越易受障礙物影響、傳輸距離越短"], 
+                type: "single", 
+                shuffleOnWrong: true, 
+                randomOrder: true,
+                textbook: "電磁波頻率越高，傳輸速度也越快；但訊號易受到障礙物的影響而衰減，因此能傳輸的距離比較短。",
+                explanation: "頻率就像是車速，速度越快（高頻）雖然傳得資料多，但遇到障礙物就很難繞過去，所以跑不遠；頻率低則像慢車，雖然慢但繞射能力強，能傳得比較遠！"
+            },
+            { 
+                id: 3, 
+                question: "(複選題) 下列哪些技術屬於「無線網路」傳輸方式？", 
+                options: ["Bluetooth", "Wi-Fi", "行動網路", "光纖", "乙太網路", "ADSL", "藍芽"], 
+                answer: ["Bluetooth", "Wi-Fi", "行動網路"], 
+                type: "multiple", 
+                shuffleOnWrong: true, 
+                randomOrder: true,
+                textbook: "常見的無線網路有藍牙、Wi-Fi、行動網路等。",
+                explanation: "這題要選出「不用線」的技術。藍牙、Wi-Fi 跟手機用的行動網路都是透過電磁波傳輸；而光纖和乙太網路則需要實體的線材。"
+            },
+            { 
+                id: 4, 
+                question: "關於常見無線網路技術的「傳輸距離」，由大到小排序何者正確？", 
+                options: ["行動網路 > Wi-Fi > 藍牙", "行動網路 > 藍牙 > Wi-Fi", "Wi-Fi > 行動網路 > 藍牙", "藍牙 > Wi-Fi > 行動網路"], 
+                answer: ["行動網路 > Wi-Fi > 藍牙"], 
+                type: "single", 
+                shuffleOnWrong: true, 
+                randomOrder: true,
+                textbook: "行動網路：訊號涵蓋範圍很廣。Wi-Fi：開放空間約 300 公尺、室內約 50~100 公尺。藍牙：傳輸距離約 10~300 公尺。",
+                explanation: "比比看誰傳得遠！行動網路靠基地台可以跨城市通訊，範圍最大；Wi-Fi 涵蓋一棟建築物；藍牙通常只在幾公尺內的個人裝置間傳輸。"
+            },
+            { 
+                id: 5, 
+                question: "下列哪一種無線網路技術，因為其傳輸距離短且主要用於個人裝置間的連接，又被稱為「無線個人網路」（WPAN）？", 
+                options: ["藍牙", "Wi-Fi", "行動網路", "衛星網路"], 
+                answer: ["藍牙"], 
+                type: "single", 
+                shuffleOnWrong: true, 
+                randomOrder: true,
+                textbook: "藍牙主要應用於個人行動載具與周邊設備的連接和控制，因此被稱為「無線個人網路」。",
+                explanation: "藍牙（Bluetooth）設計初衷是為了讓你的耳機、滑鼠擺脫線路束縛，連結你的「個人」裝置，所以叫 WPAN！"
+            },
+            { 
+                id: 6, 
+                question: "下列哪一種無線網路技術，其傳輸範圍通常涵蓋一棟建築物或校園內，因此又被稱為「無線區域網路」（WLAN）？", 
+                options: ["Wi-Fi", "藍牙", "行動網路", "近場通訊 (NFC)"], 
+                answer: ["Wi-Fi"], 
+                type: "single", 
+                shuffleOnWrong: true, 
+                randomOrder: true,
+                textbook: "Wi-Fi 可以讓同個區域中的電腦（如同一間教室或住家）一起上網，所以又稱為「無線區域網路」。",
+                explanation: "在學校教室或家裡最常用到的無線訊號就是 Wi-Fi，它的範圍剛好覆蓋一個特定的「區域」。"
+            },
+            { 
+                id: 7, 
+                question: "下列哪一種無線網路技術，其訊號涵蓋範圍最廣（如城市或國家），因此又被稱為「無線廣域網路」（WWAN）？", 
+                options: ["行動網路", "Wi-Fi", "藍牙", "紅外線"], 
+                answer: ["行動網路"], 
+                type: "single", 
+                shuffleOnWrong: true, 
+                randomOrder: true,
+                textbook: "行動網路基地臺所提供的無線訊號涵蓋範圍很廣，可以讓更大範圍的行動裝置同時上網，又稱「無線廣域網路」。",
+                explanation: "手機門號能讓你跑遍全台灣都能上網，這種跨城市、跨國家的超大覆蓋範圍就屬於「廣域」網路。"
+            },
+            { 
+                id: 8, 
+                question: "下列哪一種無線網路技術在第一次使用時，通常必須先經過「配對」程序，兩台裝置才能建立連線並傳輸資料？", 
+                options: ["Bluetooth", "Wi-Fi", "行動網路", "ADSL"], 
+                answer: ["Bluetooth"], 
+                type: "single", 
+                shuffleOnWrong: true, 
+                randomOrder: true,
+                textbook: "第一次使用藍牙裝置時，須先與行動載具或電腦進行配對，只要配對成功後……就能直接使用。",
+                explanation: "買了新的藍牙耳機要先跟手機「配對（Pairing）」，這是藍牙連線的標準動作，就像是互相交換名片認識一下！"
+            },
+            { 
+                id: 9, 
+                question: "關於無線網路設備新、舊版本（例如 Wi-Fi 6 與 Wi-Fi 4）混合搭配使用時，其「相容性」與「傳輸速度」的敘述何者正確？", 
+                options: ["新版本可支援舊版本（向下相容），但傳輸速度會受限於舊版本的上限", "新版本可支援舊版本（向下相容），且傳輸速度會自動提升至新版本的規格", "舊版本可以支援新版本(向上相容)，且傳輸速度會自動提升至新版本的規格", "舊版本可以支援新版本(向上相容)，但傳輸速度會受限於舊版本的上限"], 
+                answer: ["新版本可支援舊版本（向下相容），但傳輸速度會受限於舊版本的上限"], 
+                type: "single", 
+                shuffleOnWrong: true, 
+                randomOrder: true,
+                textbook: "藍牙的版本都能向下相容……但傳輸速度會以較低版本的裝置為主。",
+                explanation: "新版設備通常很體貼，可以連舊設備（向下相容）；但就像強壯的人配上瘦弱的人跑步，整體速度還是會被慢的那一方（舊版本）拖累喔！"
+            },
+            { 
+                id: 10, 
+                question: "關於無線基地臺（無線分享器）上的「天線」，下列哪一項描述是正確的觀念？", 
+                options: ["不能單純從天線數量多寡，來判斷傳輸範圍或速度", "天線數量愈多，代表網路下載速度一定越快", "天線長度愈長，代表無線訊號的穿透力愈強", "為了讓訊號最強，所有天線都應該指向同一個方向"], 
+                answer: ["不能單純從天線數量多寡，來判斷傳輸範圍或速度"], 
+                type: "single", 
+                shuffleOnWrong: true, 
+                randomOrder: true,
+                textbook: "並非「外觀的天線越多就越快」……無法由外觀準確判斷基地臺效能。",
+                explanation: "別被外表騙了！有的天線藏在機身裡，有的是分工不同，要準確判斷效能，還是要看產品規格表上的數據才準！"
+            },
+            { 
+                id: 11, 
+                question: "生活中常聽到的「5G 行動網路」或「4G 吃到飽」，其中的「G」代表的是什麼意思？", 
+                options: ["世代 (Generation)", "傳輸速度單位 (Gbps)", "記憶體容量 (GB)", "頻率單位 (GHz)"], 
+                answer: ["世代 (Generation)"], 
+                type: "single", 
+                shuffleOnWrong: true, 
+                randomOrder: true,
+                textbook: "G 是第幾代 (generation) 的簡稱。",
+                explanation: "這個 G 不是速度也不是容量，而是「Generation（世代）」。所以 5G 指的就是第五代行動通訊技術！"
+            },
+            { 
+                id: 12, 
+                question: "5G 行動網路具有「高速度、低延遲、多連結」等特性。請問在跨年晚會或大型演唱會現場，因為同時有大量使用者上網導致網路難以連上的問題，主要是靠 5G 的哪一項特性來有效解決？", 
+                options: ["多連結", "高速度", "低延遲", "高穿透"], 
+                answer: ["多連結"], 
+                type: "single", 
+                shuffleOnWrong: true, 
+                randomOrder: true,
+                textbook: "5G 基地臺能容納上萬臺設備同時連接。多連結特性……能容納更多臺設備同時連接。",
+                explanation: "跨年連不上網路是因為人太多「塞車」了。5G 的「多連結」特性就像增加了超多車道，讓上萬台手機可以同時擠進同一個基地台！"
+            }
+        ];
+
+        const quotes = ["無線網路縮短了空間的距離，讓資訊無所不在。", "掌握頻率的特性，就能掌握訊號傳輸的奧秘。", "Bluetooth 是個人裝置間的隱形橋樑。", "Wi-Fi 讓建築物內的每個角落都充滿可能性。", "5G 不斷進化，開啟萬物聯網的新時代。", "向下相容確保了技術交替時的平穩過度。"];
+
+        let currentIndex = 0;
+        let passedQuestions = new Set();
+        let currentAttempts = Array(quizData.length).fill(0);
+        let studentId = ""; 
+        let startTime = Date.now();
+        let isChecked = false;
+
+        const colors = ['macaron-pink', 'macaron-blue', 'macaron-green', 'macaron-yellow', 'macaron-purple'];
+
+        function showModal(msg, icon = "⚠️") {
+            const overlay = document.getElementById('modal-overlay');
+            document.getElementById('modal-message').innerText = msg;
+            document.getElementById('modal-icon').innerText = icon;
+            overlay.classList.remove('hidden');
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function renderProgress() {
+            const container = document.getElementById('progress-container');
+            container.innerHTML = '';
+            quizData.forEach((_, idx) => {
+                const dot = document.createElement('div');
+                dot.className = `progress-dot flex-shrink-0 w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold cursor-pointer transition-all`;
+                dot.innerText = idx + 1;
+                if (passedQuestions.has(idx)) {
+                    dot.classList.add('passed');
+                    dot.innerHTML = '✓';
+                } else if (idx === currentIndex) {
+                    dot.classList.add('active');
+                } else {
+                    dot.classList.add('bg-white', 'text-gray-300', 'border-gray-200', 'pointer-events-none');
+                }
+                container.appendChild(dot);
+            });
+        }
+
+        function renderQuestion() {
+            const q = quizData[currentIndex];
+            document.getElementById('question-index-display').innerText = currentIndex + 1;
+            document.getElementById('total-questions-display').innerText = quizData.length;
+            document.getElementById('question-text').innerText = q.question;
+            const hint = document.getElementById('question-hint');
+            hint.innerText = q.type === 'multiple' ? "提示：此題為複選題，請選出所有正確選項" : "";
+            const grid = document.getElementById('options-grid');
+            grid.innerHTML = '';
+            let options = [...q.options];
+            if (q.randomOrder) options = shuffleArray(options);
+            const displayColors = shuffleArray([...colors]);
+            options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `p-5 rounded-3xl text-left font-medium text-gray-700 shadow-sm border-2 border-transparent transition-all btn-hover ${displayColors[idx % colors.length]}`;
+                btn.innerText = opt;
+                btn.onclick = () => selectOption(btn, q.type);
+                grid.appendChild(btn);
+            });
+            renderProgress();
+        }
+
+        function selectOption(btn, type) {
+            if (type === 'single') {
+                document.querySelectorAll('#options-grid button').forEach(b => {
+                    b.classList.remove('border-pink-500', 'ring-4', 'ring-pink-100');
+                    delete b.dataset.selected;
+                });
+                btn.classList.add('border-pink-500', 'ring-4', 'ring-pink-100');
+                btn.dataset.selected = "true";
+            } else {
+                if (btn.dataset.selected === "true") {
+                    btn.classList.remove('border-pink-500', 'ring-4', 'ring-pink-100');
+                    delete btn.dataset.selected;
+                } else {
+                    btn.classList.add('border-pink-500', 'ring-4', 'ring-pink-100');
+                    btn.dataset.selected = "true";
+                }
+            }
+        }
+
+        async function checkAnswer() {
+            const q = quizData[currentIndex];
+            const selectedBtns = Array.from(document.querySelectorAll('#options-grid button[data-selected="true"]'));
+            if (selectedBtns.length === 0) {
+                showModal("請選一個答案再檢查唷！");
+                return;
+            }
+            const selectedValues = selectedBtns.map(b => b.innerText).sort();
+            const correctValues = [...q.answer].sort();
+            const isCorrect = selectedValues.length === correctValues.length && selectedValues.every((v, i) => v === correctValues[i]);
+            
+            currentAttempts[currentIndex]++;
+            
+            if (isCorrect) {
+                passedQuestions.add(currentIndex);
+                isChecked = true;
+                const overlay = document.getElementById('success-overlay');
+                overlay.classList.replace('opacity-0', 'opacity-100');
+                setTimeout(() => {
+                    overlay.classList.replace('opacity-100', 'opacity-0');
+                    if (currentIndex < quizData.length - 1) {
+                        currentIndex++;
+                        isChecked = false;
+                        renderQuestion();
+                    } else {
+                        checkFinish();
+                    }
+                }, 600);
+            } else {
+                showLearningFeedback(q);
+            }
+        }
+
+        function showLearningFeedback(question) {
+            const overlay = document.getElementById('feedback-overlay');
+            const textbook = document.getElementById('feedback-textbook');
+            const explanation = document.getElementById('feedback-explanation');
+            const closeBtn = document.getElementById('feedback-close-btn');
+            
+            textbook.innerText = question.textbook;
+            explanation.innerText = question.explanation;
+            overlay.classList.remove('hidden');
+            
+            let countdown = 5;
+            closeBtn.disabled = true;
+            closeBtn.classList.replace('bg-pink-400', 'bg-gray-200');
+            closeBtn.classList.replace('text-white', 'text-gray-500');
+            closeBtn.classList.remove('btn-hover', 'cursor-pointer');
+            closeBtn.classList.add('cursor-not-allowed');
+            closeBtn.innerText = `請閱讀內容...${countdown}`;
+            
+            const timer = setInterval(() => {
+                countdown--;
+                if (countdown > 0) {
+                    closeBtn.innerText = `請閱讀內容...${countdown}`;
+                } else {
+                    clearInterval(timer);
+                    closeBtn.disabled = false;
+                    closeBtn.innerText = "我懂了，再試一次";
+                    closeBtn.classList.replace('bg-gray-200', 'bg-pink-400');
+                    closeBtn.classList.replace('text-gray-500', 'text-white');
+                    closeBtn.classList.replace('cursor-not-allowed', 'cursor-pointer');
+                    closeBtn.classList.add('btn-hover');
+                }
+            }, 1000);
+
+            closeBtn.onclick = () => {
+                overlay.classList.add('hidden');
+                if (question.shuffleOnWrong) renderQuestion();
+            };
+        }
+
+        function checkFinish() {
+            if (passedQuestions.size < quizData.length) {
+                showModal("尚有題目未完成，請回頭檢查唷！");
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            const endTime = Date.now();
+            const timeTakenSec = Math.floor((endTime - startTime) / 1000);
+            const mm = String(Math.floor(timeTakenSec / 60)).padStart(2, '0');
+            const ss = String(timeTakenSec % 60).padStart(2, '0');
+            const totalAttemptsSum = currentAttempts.reduce((a, b) => a + b, 0);
+
+            const challengeKey = `challenges_${studentId}_2-2`;
+            let challenges = parseInt(localStorage.getItem(challengeKey) || "0");
+            challenges += 1;
+            localStorage.setItem(challengeKey, challenges);
+
+            document.getElementById('quiz-content').classList.add('hidden');
+            document.getElementById('result-page').classList.remove('hidden');
+            document.getElementById('student-id-display').innerText = studentId;
+            document.getElementById('total-time').innerText = `${mm}:${ss}`;
+            document.getElementById('total-challenges-display').innerText = challenges;
+            document.getElementById('quote-area').innerText = quotes[Math.floor(Math.random() * quotes.length)];
+            
+            syncToGAS(timeTakenSec, challenges, totalAttemptsSum);
+        }
+
+        async function syncToGAS(timeTaken, challenges, totalAttemptsSum) {
+            const status = document.getElementById('sync-status');
+            const data = {
+                id: studentId,
+                date: new Date().toLocaleString('zh-TW'),
+                chapter: "2-2",
+                challenges: challenges,        
+                duration: timeTaken,
+                attemptsDetail: currentAttempts.join(', '),
+                totalAttempts: totalAttemptsSum, 
+                totalScore: passedQuestions.size
+            };
+
+            try {
+                await fetch(GAS_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                status.innerText = "數據已成功儲存至雲端 ✓";
+            } catch (e) {
+                status.innerText = "數據同步失敗，請截圖保留結果。";
+            }
+        }
+
+        function initQuiz() {
+            const classInput = document.getElementById('input-class');
+            const seatInput = document.getElementById('input-seat');
+            const errorHint = document.getElementById('auth-error');
+            const cls = parseInt(classInput.value);
+            const seat = parseInt(seatInput.value);
+            if (isNaN(cls) || isNaN(seat) || cls < 901 || cls > 910 || seat < 1 || seat > 38) {
+                errorHint.classList.remove('hidden');
+                return;
+            }
+            studentId = `${cls}-${seat}`;
+            startTime = Date.now();
+            document.getElementById('auth-modal').classList.add('hidden');
+            const app = document.getElementById('app');
+            app.classList.remove('opacity-20', 'pointer-events-none');
+            renderQuestion();
+        }
+
+        document.getElementById('start-quiz-btn').onclick = initQuiz;
+        document.getElementById('modal-close').onclick = () => { document.getElementById('modal-overlay').classList.add('hidden'); };
+        document.getElementById('check-btn').onclick = checkAnswer;
+        window.onkeydown = (e) => { if (e.key === 'Enter' && !document.getElementById('auth-modal').classList.contains('hidden')) { initQuiz(); } }
+    </script>
+</body>
+</html>
